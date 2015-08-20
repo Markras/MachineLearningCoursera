@@ -1,0 +1,60 @@
+---
+title: "Coursera Machine Learning"
+output: html_document
+---
+
+# Practical Machine Learning: Course Project
+
+## Objective
+The goal of the project is to build a machine learning algorithm in order to predict a variable Classe from a database containing a variety of indicators concerning body movements, gathered by devices such as Fitbit.
+
+## Cleaning and ordering data
+Before we start building models we have to clean our data from all the columns with NAs and eliminate first seven variables with no predictive value.
+
+```{r}
+library(randomForest)
+library(caret)
+
+
+training <- read.csv("C:\\Data\\R\\Machine learning\\pml-training.csv", na.strings=c("NA", ""))
+training <-training[,colSums(is.na(training)) == 0]
+testing <- read.csv("C:\\Data\\R\\Machine learning\\pml-testing.csv", na.strings=c("NA", ""))
+testing <-testing[,colSums(is.na(training)) == 0]
+training <- training[,-c(1:7)]
+testing <- testing[,-c(1:7)]
+```
+
+Since our testing set is very small, and the training one very big, we should divide our training set into two to verify its validity: Train1 for training and Train2 for testing. 
+
+```{r}
+Train <- createDataPartition(training$classe, p = 0.6, list=FALSE)
+Train1 <- training[Train,]
+Train2 <- training[-Train,]
+
+```
+
+## Models
+Two models will be explored: rpart and random forest.
+Let us have a look on rpart and test on our Train2 data
+
+```{r}
+rpartTrain <- train(classe ~ ., data = Train1, method="rpart")
+predictions <- predict(rpartTrain, newdata=Train2)
+confusionMatrix(predictions, Train2$classe)
+```
+The accuracy is very low, only about 0.5.
+
+Let us try random forest then.
+```{r}
+rfTrain <- randomForest(classe ~. , data=Train1)
+predictions <- predict(rfTrain, newdata=Train2)
+confusionMatrix(predictions, Train2$classe)
+```
+In this case accuracy is very high, almost 1. Random forest seems to be a preferable model.
+
+#Conclusions
+Having discovered that random forest is a better choice (as indicated in lectures), we can apply our model to the definite testing data
+```{r}
+predict(rfTrain, newdata=testing)
+```
+It gives correct results.
